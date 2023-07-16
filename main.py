@@ -1,8 +1,6 @@
 import json
 import time
 import asyncio
-import schedule
-import functools
 import telebot
 import datetime
 import validators
