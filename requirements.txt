@@ -1,4 +1,3 @@
 pytelegrambotapi
 validators
-time
 python-daemon
