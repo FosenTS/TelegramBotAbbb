@@ -1,6 +1,8 @@
 import json
 import time
 import asyncio
+import threading
+import daemon
 import telebot
 import datetime
 import validators
@@ -154,15 +156,14 @@ def phrase_add_message(message):
         #Быстрые ответы
         if message.text == "Быстрые ответы":
             markup=types.ReplyKeyboardMarkup(resize_keyboard=True)
-            item1=types.KeyboardButton("Добавить быстрый ответ")
-            item2=types.KeyboardButton("Список быстрых ответов")
-            item3=types.KeyboardButton("Удалить быстрый ответ")
-            item4=types.KeyboardButton("Выключить быстрые ответы")
-            item5=types.KeyboardButton("Включить быстрые ответы")
+            item1=types.KeyboardButton("Добавить ответ")
+            item2=types.KeyboardButton("Список ответов")
+            item3=types.KeyboardButton("Удалить ответ")
+            item4=types.KeyboardButton("Вкл/Выкл ответы")
             item6=types.KeyboardButton("Назад")
             markup.row(item1, item2)
             markup.row(item3, item4)
-            markup.row(item5, item6)
+            markup.add(item6)
             bot.send_message(message.from_user.id,"Вход в меню быстрые ответы", reply_markup=markup)
 
         #Банлист
@@ -172,13 +173,11 @@ def phrase_add_message(message):
             item2=types.KeyboardButton("Добавить бан триггер")
             item3=types.KeyboardButton("Список триггеров")
             item4=types.KeyboardButton("Удалить триггер")
-            item5=types.KeyboardButton("Выключить банлист")
-            item6=types.KeyboardButton("Включить банлист")
+            item5=types.KeyboardButton("Вкл/Выкл банлист")
             item7=types.KeyboardButton("Назад")
             markup.row(item1, item2)
             markup.row(item3, item4)
-            markup.row(item5, item6)
-            markup.add(item7)
+            markup.row(item5, item7)
             bot.send_message(message.from_user.id,"Вход в меню банлиста", reply_markup=markup)
 
         #Рассылка
@@ -186,13 +185,14 @@ def phrase_add_message(message):
             LoadMailing()
             markup=types.ReplyKeyboardMarkup(resize_keyboard=True)
             item1=types.KeyboardButton("Создать рассылку")
+            item6=types.KeyboardButton("Мгновенная рассылка")
             item2=types.KeyboardButton("Изменить содержание рассылки")
             item3=types.KeyboardButton("Изменить дату рассылки")
             item4=types.KeyboardButton("Отменить рассылку")
             item5=types.KeyboardButton("Назад")
-            markup.row(item1, item2)
-            markup.row(item3, item4)
-            markup.add(item5)
+            markup.row(item1, item6)
+            markup.row(item2, item3)
+            markup.add(item4, item5)
             bot.send_message(message.from_user.id, mailingFormating(fileMailing=fileMailing), parse_mode='HTML', reply_markup=markup)
 
         #Админ-панель
@@ -215,30 +215,30 @@ def phrase_add_message(message):
         if message.text == "Назад":
             bot.send_message(message.from_user.id, "Панель администратора", reply_markup=main_markup)
         #Быстрые ответы
-        if message.text == "Выключить быстрые ответы":
-            flagFastAnswer = False
-            bot.send_message(message.from_user.id, "Выключена")
-        if message.text == "Включить быстрые ответы":
-            flagFastAnswer = True
-            bot.send_message(message.from_user.id, "Включена")
-        if message.text == "Добавить быстрый ответ":
+        if message.text == "Вкл/Выкл ответы":
+            flagFastAnswer = not flagFastAnswer
+            if flagFastAnswer == True:
+                bot.send_message(message.from_user.id, "Ответы включены")
+            else:
+                bot.send_message(message.from_user.id, "Ответы выключены")
+        if message.text == "Добавить ответ":
             bot.send_message(message.from_user.id, "Введите ответ")
             bot.register_next_step_handler(message, get_phrase_key)
-        elif message.text == "Список быстрых ответов":
+        elif message.text == "Список ответов":
             LoadPhrase()
             bot.send_message(message.from_user.id, phraseFormating(filePhrase), parse_mode='HTML')
-        elif message.text == "Удалить быстрый ответ":
+        elif message.text == "Удалить ответ":
             bot.send_message(message.from_user.id, "Напишите какой быстрый ответ нужно удалить(Полностью)")
             bot.register_next_step_handler(message, pop_phrase_key)
 
 
         #Банлист
-        elif message.text == "Выключить банлист":
-            flagBanner = False
-            bot.send_message(message.from_user.id, "Выключен")
-        elif message.text == "Включить банлист":
-            flagBanner = True
-            bot.send_message(message.from_user.id, "Включен")
+        if message.text == "Вкл/Выкл банлист":
+            flagBanner = not flagBanner
+            if flagBanner == True:
+                bot.send_message(message.from_user.id, "Банлист включен")
+            else:
+                bot.send_message(message.from_user.id, "Банлист выключен")
         elif message.text == "Добавить мут триггер":
             bot.send_message(message.from_user.id, "Напишите триггер")
             bot.register_next_step_handler(message, add_trigger_mute)
@@ -265,7 +265,9 @@ def phrase_add_message(message):
         elif message.text == "Изменить содержимое рассылки":
             bot.send_message(message.from_user.id, "Напишите новый текст для рассылки")
             bot.register_next_step_handler(message, edit_textMailing)
-    
+        elif message.text == "Мгновенная рассылка":
+            bot.send_message(message.from_user.id, "Введите текст рассылки")
+            bot.register_next_step_handler(message, fastMailing)
 
         #Админ-панель
         if str(message.from_user.id) in fileAdministration["owner"]:
@@ -290,6 +292,7 @@ def pop_phrase_key(message):
     del filePhrase[message.text]
     with open("json/phrase.json", "w", encoding='utf-8') as write_file:
         json.dump(filePhrase, write_file, ensure_ascii=False)
+    bot.send_message(message.from_user.id, "Фраза удалена")
 
 def get_phrase_key(message):
     global temp_phraseKey
@@ -302,6 +305,7 @@ def get_phrase_value(message):
     temp_phraseValue = message.text
     global filePhrase
     addPhrase(filePhrase,temp_phraseKey, temp_phraseValue.split(" "))
+    bot.send_message(message.from_user.id, "Фраза добавлена")
 
 #Банлист
 
@@ -309,11 +313,13 @@ def add_trigger_mute(message):
     fileBanwords["mute"].append(str.lower(message.text))
     with open("json/banwords.json", "w", encoding='utf-8') as write_file:
         json.dump(fileBanwords, write_file, ensure_ascii=False)
+    bot.send_message(message.from_user.id, "Мут триггер добавлен")
 
 def add_trigger_ban(message):
     fileBanwords["ban"].append(str.lower(message.text))
     with open("json/banwords.json", "w", encoding='utf-8') as write_file:
         json.dump(fileBanwords, write_file, ensure_ascii=False)
+    bot.send_message(message.from_user.id, "Бан триггер добавлен")
 
 def pop_trigger(message):
     try:
@@ -322,6 +328,7 @@ def pop_trigger(message):
         fileBanwords["ban"].remove(str.lower(message.text))
     with open("json/banwords.json", "w", encoding='utf-8') as write_file:
         json.dump(fileBanwords, write_file, ensure_ascii=False)
+    bot.send_message(message.from_user.id, "Триггер удалён")
 
 
 #Рассылка
@@ -340,7 +347,9 @@ def add_textMailing(message):
     with open("json/mailing.json", "w", encoding='utf-8') as write_file:
                 json.dump(fileMailing, write_file, ensure_ascii=False)
     bot.send_message(message.from_user.id, "Рассылка создана\n")
-    asyncio.run(start_gorutine_mailing())
+    t = threading.Thread(target=startMailingDaemon)
+    t.daemon = True
+    t.start()
 
 def edit_textMailing(message):
     fileMailing["text"] = message.text
@@ -353,6 +362,10 @@ def edit_textMailing(message):
     with open("json/mailing.json", "w", encoding='utf-8') as write_file:
         json.dump(fileMailing, write_file, ensure_ascii=False)
     bot.send_message(message.from_user.id, "Рассылка изменена")
+
+def fastMailing(message):
+    bot.send_message(int(config["chatId"]), message.text)
+    bot.send_message(message.from_user.id, "Рассылка отправлена")
 
 
 #Админ панель
@@ -435,8 +448,13 @@ LoadBanwords()
 LoadMailing()
 LoadAdmname()
 
-if fileMailing["status"] == True:
-    asyncio.run(start_gorutine_mailing())
+def startMailingDaemon():
+    if fileMailing["status"] == True:
+        asyncio.run(start_gorutine_mailing())
+
+t = threading.Thread(target=startMailingDaemon)
+t.daemon = True
+t.start()
 
 bot.infinity_polling()
 
