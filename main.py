@@ -297,14 +297,14 @@ def pop_phrase_key(message):
 def get_phrase_key(message):
     global temp_phraseKey
     temp_phraseKey = message.text
-    bot.send_message(message.from_user.id, "Введите через пробел фразы(без запятых)")
+    bot.send_message(message.from_user.id, "Введите через запятую с пробелом фразы")
     bot.register_next_step_handler(message, get_phrase_value)
 
 
 def get_phrase_value(message):
     temp_phraseValue = message.text
     global filePhrase
-    addPhrase(filePhrase,temp_phraseKey, temp_phraseValue.split(" "))
+    addPhrase(filePhrase,temp_phraseKey, temp_phraseValue.split(", "))
     bot.send_message(message.from_user.id, "Фраза добавлена")
 
 #Банлист
