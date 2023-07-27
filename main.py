@@ -137,7 +137,7 @@ def phrase_add_message(message):
             if validators.url(message.text):
                 bot.delete_message(message.chat.id, message.message_id)
             if str.lower(message.text) in fileBanwords["mute"]:
-                bot.restrict_chat_member(message.chat.id, message.from_user.id, until_date=86400)
+                bot.restrict_chat_member(message.chat.id, message.from_user.id, until_date=time() + 86400)
                 bot.delete_message(message.chat.id, message.message_id)
             if str.lower(message.text) in fileBanwords["ban"]:
                 bot.kick_chat_member(message.chat.id, message.from_user.id, until_date=864000000)
@@ -372,6 +372,8 @@ def fastMailing(message):
 
 admID = ""
 def add_adm_id(message):
+    if str.lower(message.text) == "Назад":
+        return
     global admID
     admID = message.text
     bot.send_message(message.from_user.id, "Введите имя администратора")
@@ -379,6 +381,8 @@ def add_adm_id(message):
 
 admName = ""
 def add_adm_name(message):
+    if str.lower(message.text) == "Назад":
+        return
     global fileAdmname
     admName = str(message.text)
     fileAdministration["admins"].append(str(admID))
@@ -394,13 +398,19 @@ def add_adm_name(message):
 
 ownID = ""
 def add_own_id(message):
+    if str.lower(message.text) == "Назад":
+        return
     global ownID
     ownID = message.text
     bot.send_message(message.from_user.id, "Введите имя администратора")
+    if str.lower(message.text) == "Назад":
+        return
     bot.register_next_step_handler(message, add_own_name)
 
 ownName = ""
 def add_own_name(message):
+    if str.lower(message.text) == "Назад":
+        return
     global fileAdmname
     ownName = str(message.text)
     fileAdministration["owner"].append(str(ownID))
