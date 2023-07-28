@@ -213,9 +213,10 @@ def phrase_add_message(message):
                 item3=types.KeyboardButton("Список администраторов")
                 item4=types.KeyboardButton("Удалить администратора")
                 item5=types.KeyboardButton("Назад")
+                item6=types.KeyboardButton("Изменить текст заглушки")
                 markup.row(item1, item2)
                 markup.row(item3, item4)
-                markup.add(item5)
+                markup.row(item6, item5)
                 bot.send_message(message.from_user.id,"Меню owner", reply_markup=markup)
             else:
                 bot.send_message(message.from_user.id, "Недостаточно прав")
@@ -292,6 +293,9 @@ def phrase_add_message(message):
             if message.text == "Удалить администратора":
                 bot.send_message(message.from_user.id, "Введите айди администратора, которого нужно удалить")
                 bot.register_next_step_handler(message, pop_adm)
+            if message.text == "Изменить текст заглушки":
+                bot.send_message(message.from_user.id, "Введите текст заглушки")
+                bot.register_next_step_handler(message, edit_spam_message)
 
     else:
         bot.send_message(message.from_user.id, config["plug"])
@@ -381,6 +385,12 @@ def fastMailing(message):
 
 
 #Админ панель
+
+def edit_spam_message(message):
+    config["plug"] = message.text
+    with open("json/config.json", "w", encoding="utf-8") as write_file:
+        json.dump(config, write_file, ensure_ascii=False)
+    bot.send_message(message.from_user.id, "Изменено")
 
 admID = ""
 def add_adm_id(message):
