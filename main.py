@@ -74,7 +74,7 @@ def phraseFormating(filePhrase):
     for key, value in filePhrase.items():
         formatingPhrase+="<b>Быстрый ответ:</b>\n" + key + "\n<b>Фразы связанные с ответом:</b>\n"
         for v in value:
-            formatingPhrase+=v + " "
+            formatingPhrase+=v + ", "
         formatingPhrase+="\n\n"
     return formatingPhrase
 
@@ -82,10 +82,10 @@ def banwordsFormating(fileBanwords):
     formatingPhrase = "Список триггеров:\n\n"
     formatingPhrase += "<b>Список триггеров для мута:</b>\n"
     for value in fileBanwords["mute"]:
-        formatingPhrase+= value + " "
+        formatingPhrase+= value + ", "
     formatingPhrase += "\n\n <b>Список триггеров для бана:</b>\n"
     for value in fileBanwords["ban"]:
-        formatingPhrase+= value + " "
+        formatingPhrase+= value + ", "
     return formatingPhrase
     
 
@@ -116,6 +116,12 @@ def admin_button_message(message):
         if str(message.from_user.id) in fileAdministration["admins"] or str(message.from_user.id) in fileAdministration["owner"]:
             bot.send_message(message.from_user.id, "Вход в панель администратора", reply_markup=main_markup)
 
+
+@bot.message_handler(commands=["id"])
+def get_id_message(message):
+    if message.chat.type == "private":
+        bot.send_message(message.from_user.id, str(message.from_user.id))
+
 @bot.message_handler(content_types=['text'])
 def phrase_add_message(message):
 
@@ -127,7 +133,10 @@ def phrase_add_message(message):
             for key, value in filePhrase.items():
                 for v in value:
                     if str.lower(v) in str.lower(message.text):
-                        bot.send_message(message.chat.id, key)
+                        LoadFormating()
+                        for key, value in fileFormating.items():
+                            if str.lower(key) == str.lower(message.text):
+                                bot.send_message(message.chat.id, key, entities = value, parse_mode="Markdown")
                         break
     
     #Банлист
@@ -259,7 +268,7 @@ def phrase_add_message(message):
                 json.dump(fileMailing, write_file, ensure_ascii=False)
             bot.send_message(message.from_user.id, "Рассылка отменена")
         elif message.text == "Создать рассылку":
-            bot.send_message(message.from_user.id, "Введите дату рассылки в формате (День-Месяц-Год-Час-Минута)")
+            bot.send_message(message.from_user.id, "Введите дату рассылки в формате (День-Месяц-Год-Час-Минута) также месяца и дни писать без использования 0(Пример: 7 = Июль)")
             bot.register_next_step_handler(message, add_dateMailing)
     
         elif message.text == "Изменить содержимое рассылки":
@@ -290,16 +299,19 @@ def phrase_add_message(message):
 #Быстрые ответы
 def pop_phrase_key(message):
     del filePhrase[message.text]
+    del fileFormating[message.text]
     with open("json/phrase.json", "w", encoding='utf-8') as write_file:
         json.dump(filePhrase, write_file, ensure_ascii=False)
+    with open("json/formating.json", "w", encoding='utf-8') as write_file:
+        json.dump(fileFormating, write_file, ensure_ascii=False)
     bot.send_message(message.from_user.id, "Фраза удалена")
 
 def get_phrase_key(message):
     global temp_phraseKey
+    global fileFormating
     temp_phraseKey = message.text
     bot.send_message(message.from_user.id, "Введите через запятую с пробелом фразы")
     bot.register_next_step_handler(message, get_phrase_value)
-
 
 def get_phrase_value(message):
     temp_phraseValue = message.text
