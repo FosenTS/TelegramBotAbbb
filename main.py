@@ -133,11 +133,8 @@ def phrase_add_message(message):
             for key, value in filePhrase.items():
                 for v in value:
                     if str.lower(v) in str.lower(message.text):
-                        LoadFormating()
-                        for key, value in fileFormating.items():
-                            if str.lower(key) == str.lower(message.text):
-                                bot.send_message(message.chat.id, key, entities = value, parse_mode="Markdown")
-                        break
+                            bot.send_message(message.chat.id, key, parse_mode="Markdown")
+                            break
     
     #Банлист
     if flagBanner == True:
