@@ -143,7 +143,7 @@ def phrase_add_message(message):
             if validators.url(message.text):
                 bot.delete_message(message.chat.id, message.message_id)
             if str.lower(message.text) in fileBanwords["mute"]:
-                bot.restrict_chat_member(message.chat.id, message.from_user.id, until_date=time() + 86400)
+                bot.restrict_chat_member(message.chat.id, message.from_user.id, until_date=int(time.time() + 246060))
                 bot.delete_message(message.chat.id, message.message_id)
             if str.lower(message.text) in fileBanwords["ban"]:
                 bot.kick_chat_member(message.chat.id, message.from_user.id, until_date=864000000)
