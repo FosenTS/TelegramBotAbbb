@@ -133,7 +133,7 @@ def phrase_add_message(message):
             for key, value in filePhrase.items():
                 for v in value:
                     if str.lower(v) in str.lower(message.text):
-                            bot.send_message(message.chat.id, key, parse_mode="Markdown")
+                            bot.send_message(message.chat.id, key)
                             break
     
     #Банлист
@@ -377,7 +377,8 @@ def edit_textMailing(message):
     bot.send_message(message.from_user.id, "Рассылка изменена")
 
 def fastMailing(message):
-    bot.send_message(int(config["chatId"]), message.text)
+    for chatid in config["chatId"]:
+        bot.send_message(int(chatid), message.text)
     bot.send_message(message.from_user.id, "Рассылка отправлена")
 
 
@@ -461,7 +462,8 @@ async def mailing_infinity():
         dateMailing = fileMailing["date"].split("-")
         nowDate = datetime.datetime.now()
         if str(nowDate.day) == dateMailing[0] and str(nowDate.month) == dateMailing[1] and str(nowDate.year) == dateMailing[2] and str(nowDate.hour) == dateMailing[3] and str(nowDate.minute) == dateMailing[4]:
-            bot.send_message(int(config["chatId"]), fileMailing["text"])
+            for chatid in config["chatId"]:
+                bot.send_message(int(chatid), fileMailing["text"])
             fileMailing["status"] = False
             with open("json/mailing.json", "w", encoding='utf-8') as write_file:
                 json.dump(fileMailing, write_file, ensure_ascii=False)
